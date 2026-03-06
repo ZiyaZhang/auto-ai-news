@@ -1,0 +1,17 @@
+# Sources — {{ title | default(task_key) }}
+
+> Run: {{ run_id }} | Period: {{ window_start }} — {{ window_end }}
+> Total items: {{ item_count }}
+
+{% for item in items %}
+## {{ loop.index }}. {{ item.title }}
+
+- **URL**: {{ item.url }}
+- **Date**: {{ item.publish_date }}
+- **Source**: {{ item.source }}
+- **Score**: {{ "%.1f"|format(item.score) }}
+{% if item.excerpt %}
+> {{ item.excerpt[:200] }}
+{% endif %}
+
+{% endfor %}

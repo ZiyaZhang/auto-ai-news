@@ -1,0 +1,72 @@
+# {{ title | default("AI 周更情报") }}
+
+> **周期**: {{ window_start }} — {{ window_end }}
+> **生成时间**: {{ generated_at }}
+> **信息源**: 配置 {{ configured_source_count }} 个 / 入选 {{ active_source_count }} 个 | **收录条目**: {{ item_count }} 条
+
+---
+
+## Top {{ top_n }} 看板
+
+| # | 重要度 | 日期 | 来源 | 标题 | Takeaway | 链接 |
+|---|--------|------|------|------|----------|------|
+{% for item in top_items %}| {{ loop.index }} | {% if item.score >= 2.0 %}⭐⭐⭐{% elif item.score >= 1.5 %}⭐⭐{% else %}⭐{% endif %} | {{ item.publish_date }} | {{ item.source }} | {{ item.title[:60] }}{% if item.title|length > 60 %}…{% endif %} | {{ item.takeaway }} | [链接]({{ item.url }}) |
+{% endfor %}
+
+---
+
+## 全量时间线
+
+| # | 日期 | 来源 | 标题 | 摘要 | 链接 |
+|---|------|------|------|------|------|
+{% for item in items %}| {{ loop.index }} | {{ item.publish_date }} | {{ item.source }} | {{ item.title[:55] }}{% if item.title|length > 55 %}…{% endif %} | {{ item.excerpt }} | [链接]({{ item.url }}) |
+{% endfor %}
+
+---
+
+## 主题结论（{{ themes|length }} 个主题）
+
+{% for theme in themes %}
+### {{ loop.index }}. {{ theme.name }}
+
+{{ theme.summary }}
+
+{% if theme.refs %}
+相关条目：
+{% for ref in theme.refs %}- [{{ ref.title[:50] }}{% if ref.title|length > 50 %}…{% endif %}]({{ ref.url }})（{{ ref.publish_date }}）
+{% endfor %}{% endif %}
+
+{% endfor %}
+{% if not themes %}
+_本周期内未检测到明显主题聚类。_
+{% endif %}
+
+---
+
+## 本周无更新源清单
+
+{% if silent_sources %}
+以下已配置信息源在本周期内无新增入选条目：
+
+| 信息源 | 原因 | 抓取 | 去重淘汰 | 过滤淘汰 |
+|--------|------|------|----------|----------|
+{% for s in silent_sources %}| {{ s.name }} | {{ s.reason }} | {{ s.fetched }} | {{ s.dedup_dropped }} | {{ s.filter_dropped }} |
+{% endfor %}{% else %}
+_所有已配置信息源均产出了条目。_
+{% endif %}
+
+---
+
+## 信息源健康告警
+
+{% if source_health_alerts %}
+| 信息源 | 连续失败 | 最近失败时间 | 状态 |
+|--------|----------|--------------|------|
+{% for s in source_health_alerts %}| {{ s.name }} | {{ s.failures }} | {{ s.last_failure or "—" }} | {% if s.disabled %}已禁用{% else %}告警{% endif %} |
+{% endfor %}{% else %}
+_本周期无连续失败告警。_
+{% endif %}
+
+---
+
+_由 intel-hub v{{ version }} 自动生成_

@@ -1,0 +1,331 @@
+task_key: weekly_ai_intel
+time_window_days: 7
+dedup_ttl_days: 45
+
+sources:
+  # ═══════════════════════════════════════════════════════════
+  # Tier 0: 社区聚合器 / 独立博主（首发渠道，高信噪比）
+  # ═══════════════════════════════════════════════════════════
+
+  - type: rss
+    url: "https://hnrss.org/frontpage"
+    label: "Hacker News"
+    weight: 1.5
+
+  - type: rss
+    url: "https://simonwillison.net/atom/everything/"
+    label: "Simon Willison"
+    weight: 1.4
+
+  - type: rss
+    url: "https://www.reddit.com/r/LocalLLaMA/.rss"
+    label: "r/LocalLLaMA"
+    weight: 1.2
+
+  - type: rss
+    url: "https://www.reddit.com/r/MachineLearning/.rss"
+    label: "r/MachineLearning"
+    weight: 1.2
+
+  - type: rss
+    url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+    label: "TechCrunch AI"
+    weight: 1.0
+
+  - type: rss
+    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+    label: "The Verge AI"
+    weight: 0.9
+
+  - type: rss
+    url: "https://changelog.com/feed"
+    label: "Changelog"
+    weight: 1.1
+
+  # ═══════════════════════════════════════════════════════════
+  # Tier 1: 官方 AI Lab / 大模型公司
+  # ═══════════════════════════════════════════════════════════
+
+  - type: rss
+    url: "https://openai.com/blog/rss.xml"
+    label: "OpenAI Blog"
+    weight: 1.3
+
+  - type: html_list
+    url: "https://engineering.fb.com/tag/ai/"
+    label: "Meta Engineering AI"
+    weight: 1.2
+
+  - type: html_list
+    url: "https://machinelearning.apple.com/"
+    label: "Apple ML Research"
+    weight: 1.1
+
+  - type: rss
+    url: "https://aws.amazon.com/blogs/machine-learning/feed/"
+    label: "AWS ML Blog"
+    weight: 1.1
+
+  - type: html_list
+    url: "https://www.anthropic.com/news"
+    label: "Anthropic News"
+    weight: 1.3
+
+  - type: html_list
+    url: "https://www.anthropic.com/research"
+    label: "Anthropic Research"
+    weight: 1.3
+
+  - type: rss
+    url: "https://blog.google/technology/ai/rss/"
+    label: "Google AI Blog"
+    weight: 1.3
+
+  - type: rss
+    url: "https://www.deepmind.com/blog/rss.xml"
+    label: "DeepMind Blog"
+    weight: 1.3
+
+  - type: html_list
+    url: "https://blogs.microsoft.com/ai/"
+    label: "Microsoft AI Blog"
+    weight: 1.2
+
+  - type: rss
+    url: "https://www.microsoft.com/en-us/research/blog/feed/"
+    label: "Microsoft Research"
+    weight: 1.2
+
+  - type: rss
+    url: "https://developer.nvidia.com/blog/feed/"
+    label: "NVIDIA Technical Blog"
+    weight: 1.1
+
+  - type: sitemap
+    url: "https://mistral.ai/sitemap.xml"
+    query: "/news/"
+    label: "Mistral News"
+    weight: 1.3
+
+  - type: sitemap
+    url: "https://cohere.com/sitemap.xml"
+    query: "/blog/"
+    label: "Cohere Blog"
+    weight: 1.1
+
+  # ═══════════════════════════════════════════════════════════
+  # Tier 2: 社区 / 开源 / 论文
+  # ═══════════════════════════════════════════════════════════
+
+  - type: rss
+    url: "https://huggingface.co/blog/feed.xml"
+    label: "Hugging Face Blog"
+    weight: 1.2
+
+  - type: html_list
+    url: "https://huggingface.co/papers"
+    label: "HF Daily Papers"
+    weight: 1.3
+
+  - type: arxiv
+    query: "cat:cs.AI OR cat:cs.CL OR cat:cs.LG"
+    label: "arXiv AI/CL/LG"
+    weight: 1.0
+
+  - type: html_list
+    url: "https://paperswithcode.com/"
+    label: "Papers with Code"
+    weight: 1.2
+
+  - type: rss
+    url: "https://bair.berkeley.edu/blog/feed.xml"
+    label: "BAIR Blog"
+    weight: 1.1
+
+  - type: html_list
+    url: "https://openreview.net/"
+    label: "OpenReview"
+    weight: 1.0
+
+  # ═══════════════════════════════════════════════════════════
+  # Tier 3: VC / 行业分析
+  # ═══════════════════════════════════════════════════════════
+
+  # a16z: RSS broken, JS-rendered — requires browser fetcher
+  # Sequoia: site restructured, all URLs 404
+  # Meta AI: RSS broken, blocks non-browser requests
+  # DeepSeek: fully JS-rendered SPA, no sitemap
+
+  - type: rss
+    url: "https://menlovc.com/feed/"
+    label: "Menlo Ventures"
+    weight: 0.95
+
+  - type: html_list
+    url: "https://a16z.com/tag/artificial-intelligence/"
+    label: "a16z AI"
+    weight: 0.9
+
+  - type: rss
+    url: "https://www.deeplearning.ai/the-batch/feed/"
+    label: "The Batch"
+    weight: 1.1
+
+  # ═══════════════════════════════════════════════════════════
+  # Tier 4: 基准 / 评测 / 政策
+  # ═══════════════════════════════════════════════════════════
+
+  - type: rss
+    url: "https://lmarena.ai/blog/feed"
+    label: "LMArena"
+    weight: 1.2
+
+  - type: html_list
+    url: "https://epochai.org/blog"
+    label: "Epoch AI"
+    weight: 1.1
+
+  - type: html_list
+    url: "https://semianalysis.com/"
+    label: "SemiAnalysis"
+    weight: 1.1
+
+  - type: sitemap
+    url: "https://mlcommons.org/post-sitemap.xml"
+    label: "MLCommons"
+    weight: 1.1
+
+  - type: html_list
+    url: "https://www.nist.gov/artificial-intelligence"
+    label: "NIST AI"
+    weight: 1.0
+
+  - type: html_list
+    url: "https://www.aisi.gov.uk/work"
+    label: "UK AISI"
+    weight: 1.0
+
+  - type: html_list
+    url: "https://oecd.ai/"
+    label: "OECD AI"
+    weight: 0.9
+
+  - type: html_list
+    url: "https://cset.georgetown.edu/publication/"
+    label: "CSET"
+    weight: 0.9
+
+  - type: html_list
+    url: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj"
+    label: "EU AI Act"
+    weight: 0.8
+
+  - type: html_list
+    url: "https://www.jiqizhixin.com/"
+    label: "机器之心"
+    weight: 0.9
+
+  - type: html_list
+    url: "https://www.qbitai.com/"
+    label: "量子位"
+    weight: 0.9
+
+filters:
+  require_publish_date: true
+  include_patterns:
+    - "ai"
+    - "artificial intelligence"
+    - "llm"
+    - "language model"
+    - "foundation model"
+    - "inference"
+    - "reasoning"
+    - "agent"
+    - "tool calling"
+    - "mcp"
+    - "prompt"
+    - "rag"
+    - "embedding"
+    - "transformer"
+    - "diffusion"
+    - "multimodal"
+    - "vision"
+    - "benchmark"
+    - "dataset"
+    - "arxiv"
+    - "machine learning"
+    - "deep learning"
+    - "gpu"
+    - "nvidia"
+    - "tpu"
+    - "openai"
+    - "anthropic"
+    - "deepmind"
+    - "gemini"
+    - "qwen"
+    - "llama"
+    - "mistral"
+    - "cohere"
+    - "hugging face"
+  exclude_patterns:
+    - "sponsored"
+    - "advertisement"
+    - "hiring"
+    - "job posting"
+    - "careers"
+    - "join our team"
+    - "podcast"
+    - "video"
+    - "event recap"
+    - "webinar"
+    - "office hours"
+  min_detail_signals: 0
+
+ranking:
+  source_weight_map:
+    "hnrss.org": 1.2
+    "simonwillison.net": 1.45
+    "openai.com": 1.5
+    "anthropic.com": 1.5
+    "deepmind.com": 1.45
+    "blog.google": 1.45
+    "mistral.ai": 1.4
+    "techcrunch.com": 1.0
+    "theverge.com": 0.9
+    "engineering.fb.com": 1.2
+    "machinelearning.apple.com": 1.1
+    "aws.amazon.com": 1.1
+    "huggingface.co": 1.35
+    "microsoft.com": 1.35
+    "developer.nvidia.com": 1.25
+    "lmarena.ai": 1.3
+    "reddit.com": 1.1
+    "changelog.com": 1.1
+    "arxiv.org": 1.1
+    "epochai.org": 1.1
+    "semianalysis.com": 1.2
+    "mlcommons.org": 1.1
+    "bair.berkeley.edu": 1.1
+    "openreview.net": 1.0
+    "a16z.com": 0.9
+    "deeplearning.ai": 1.1
+    "oecd.ai": 0.9
+    "cset.georgetown.edu": 0.9
+    "eur-lex.europa.eu": 0.8
+    "jiqizhixin.com": 0.9
+    "qbitai.com": 0.9
+  multi_source_bonus: 0.3
+  detail_signal_bonus: 0.1
+
+report:
+  kind: weekly_intel
+  language: zh
+
+bundle:
+  include_sources_md: true
+  include_pdf: false
+  one_md_per_item: true
+
+output_channels:
+  - type: local
+  - type: notebooklm

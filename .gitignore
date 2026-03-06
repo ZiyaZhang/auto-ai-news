@@ -1,0 +1,26 @@
+# OS / IDE
+.DS_Store
+.vscode/
+.cursor/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+intel-hub/out/
+intel-hub/state/
+intel-hub/import_state/
+*.log
+
+# OpenClaw local files
+.openclaw/

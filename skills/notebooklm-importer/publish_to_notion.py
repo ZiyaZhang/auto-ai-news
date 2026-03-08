@@ -14,6 +14,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 
 def run_and_capture(cmd):
@@ -42,6 +43,38 @@ def capture_notebooklm_report(target_path):
     print(f"Captured report text -> {target_path}")
 
 
+def build_slides_publish_md(target_path, title, image_files, attachments):
+    generated_at = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M")
+    lines = [
+        title,
+        "",
+        f"创建时间：{generated_at}",
+        f"幻灯片图片：{len(image_files)}",
+        f"原始附件：{len(attachments)}",
+        "",
+        "^ 页面结构",
+        "",
+        "- 本页优先插入逐页幻灯片图片，便于直接在 Notion 中阅读。",
+        "- 页面末尾保留 NotebookLM 导出的 PDF/PPTX 原始文件，便于下载。",
+        "",
+    ]
+    if image_files:
+        lines.extend([
+            "^ 图片目录",
+            "",
+            *(f"- {path.name}" for path in image_files),
+            "",
+        ])
+    if attachments:
+        lines.extend([
+            "^ 原始附件",
+            "",
+            *(f"- {path.name}" for path in attachments),
+            "",
+        ])
+    target_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("task_key")
@@ -58,6 +91,7 @@ def main():
     root = pathlib.Path("intel-hub/out") / args.task_key / args.run_id
     exports = root / "notebooklm_exports"
     downloads = exports / "_downloads"
+    slides_images = exports / "slides_images"
     notion_push = pathlib.Path("skills/notion-writer/notion_push.py")
 
     if not notion_push.exists():
@@ -100,6 +134,15 @@ def main():
             files.extend(sorted(file_root.glob("*.pdf")))
     if not files:
         raise FileNotFoundError(f"No pptx/pdf found in {downloads} or {exports}")
+    image_files = []
+    if slides_images.exists():
+        image_files = sorted(
+            [
+                path
+                for path in slides_images.iterdir()
+                if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+            ]
+        )
 
     base = ["python3", str(notion_push)]
 
@@ -109,11 +152,15 @@ def main():
     report_out = run_and_capture(report_cmd)
     report_url = extract_notion_url(report_out)
 
-    slides_title = args.title or f"{args.task_key} {args.run_id} PPT归档"
-    slides_cmd = base
+    slides_title = args.title or f"{args.task_key} {args.run_id} PPT图文归档"
+    slides_publish_md = exports / "slides_publish.md"
+    build_slides_publish_md(slides_publish_md, slides_title, image_files, files)
+
+    slides_cmd = base + [str(slides_publish_md)]
+    if image_files:
+        slides_cmd += ["--attach-images-dir", str(slides_images)]
     for f in files:
         slides_cmd += ["--attach", str(f)]
-    slides_cmd += ["--title", slides_title]
     if args.importance:
         slides_cmd += ["--importance", args.importance]
     slides_out = run_and_capture(slides_cmd)

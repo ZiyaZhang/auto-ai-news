@@ -120,8 +120,10 @@ Expected flow:
 4. Rewrite the NotebookLM popup prompt for report and slides
 5. Click NotebookLM `生成` for report and slides
 6. Save NotebookLM report text to `notebooklm_exports/notebooklm_report.md`
-7. Export PPTX/PDF to `notebooklm_exports/_downloads/`
-8. Create new Notion pages for the report and slides archive
+7. Generate `notebooklm_exports/slides_publish.md` for the slides page intro
+8. Prefer slide images in `notebooklm_exports/slides_images/` for direct reading in Notion
+9. Export PPTX/PDF to `notebooklm_exports/_downloads/`
+10. Create new Notion pages for the report and slides archive
 
 ## Key output contract
 
@@ -131,9 +133,18 @@ For a run to be considered complete, these files should exist:
 - `intel-hub/out/<task_key>/<run_id>/manifest.json`
 - `intel-hub/out/<task_key>/<run_id>/upload_bundle/`
 - `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/notebooklm_report.md`
+- `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_publish.md`
+- `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_images/` when slide images are available
 - `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/_downloads/*.pptx` or `*.pdf`
 
 The root `intel-hub/out/<task_key>/<run_id>/report.md` is the local collection report. It is not the default Notion handoff target for NotebookLM publishing.
+
+The preferred Notion page structure is:
+
+1. A report page built from `notebooklm_report.md`
+2. A slides page built from `slides_publish.md`
+3. Sequential image blocks from `slides_images/`
+4. Original PDF/PPTX attachments at the end of the slides page
 
 ## Repository layout
 

@@ -25,7 +25,7 @@ Hard rules:
 | `NOTION_VERSION` | Optional Notion API version for page/block APIs (default: `2022-06-28`) |
 | `NOTION_UPLOAD_VERSION` | Optional Notion API version for File Upload APIs (default: `2025-09-03`) |
 
-Set these in your shell environment, a local `.env` that your shell loads, or your OpenClaw skill env. Scripts read them via `os.environ` only.
+All are set in `~/.env` and loaded via `~/.zshrc`. Scripts read them via `os.environ`.
 
 ---
 
@@ -50,6 +50,7 @@ Usage:
 ```
 python3 {baseDir}/notion_push.py <file.md>
 python3 {baseDir}/notion_push.py <file.md> --importance 高
+python3 {baseDir}/notion_push.py <file.md> --attach-images-dir ./slides_images --attach ./slides.pdf
 python3 {baseDir}/notion_push.py <file.md> --attach ./slides.pdf --attach ./cover.png
 python3 {baseDir}/notion_push.py --attach ./slides.pdf --title "PPT归档"
 python3 {baseDir}/notion_push.py --test
@@ -60,6 +61,7 @@ Behavior:
 - Splits remaining text into Notion blocks (paragraphs + headings for `^` lines).
 - Creates a new page in the target database.
 - Supports local file upload via Notion File Upload API and appends file/image/pdf blocks to the page.
+- Supports batch image publishing from a directory via `--attach-images-dir`, inserting images in filename order.
 - If only `--attach` is provided (no markdown file), creates an attachment archive page first, then appends files.
 - Prints the Notion page URL on success.
 
@@ -85,6 +87,9 @@ Conversion rules:
 /nw push <file_path> --attach <local_file> [--attach <local_file>...]
 - Push markdown and attach local files (image/pdf/other) to the same Notion page.
 
+/nw push <file_path> --attach-images-dir <dir_path> [--attach <local_file>...]
+- Push markdown, insert all images in `<dir_path>` as readable image blocks, and then append original files.
+
 /nw push-attachments <local_file> [<local_file>...] [--title 页面标题]
 - Create an attachment archive page and upload local files into it.
 
@@ -102,6 +107,7 @@ Other skills (e.g. market-sentry) can call notion-writer to push their outputs:
 
 ```bash
 python3 {notion-writer-baseDir}/notion_push.py /path/to/brief.md --importance 高
+python3 {notion-writer-baseDir}/notion_push.py /path/to/slides_publish.md --attach-images-dir /path/to/slides_images --attach /path/to/slides.pdf
 ```
 
 Or programmatically:

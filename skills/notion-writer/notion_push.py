@@ -6,6 +6,7 @@ Usage:
     python3 notion_push.py <file.md>
     python3 notion_push.py <file.md> --importance 高
     python3 notion_push.py <file.md> --attach ./slides.pdf --attach ./cover.png
+    python3 notion_push.py <file.md> --attach-images-dir ./slides_images --attach ./slides.pdf
     python3 notion_push.py --attach ./slides.pdf --title "PPT 归档"
     python3 notion_push.py --test
 
@@ -23,6 +24,7 @@ import sys
 import uuid
 import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 NOTION_DATABASE_ID = os.environ.get("NOTION_DATABASE_ID")
@@ -94,6 +96,10 @@ def parse_title(text):
 
 def _make_rich_text(content):
     return [{"type": "text", "text": {"content": content}}]
+
+
+def natural_sort_key(value):
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", value)]
 
 
 def create_page(title, importance=None, blocks=None):
@@ -253,19 +259,61 @@ def attach_files_to_page(page_id, file_paths, caption=None):
         print(f"OK: attached {file_path} to page {page_id} via file_upload {file_upload_id}")
 
 
-def push_attachment_page(file_paths, importance=None, title=None, caption=None):
+def collect_image_files(images_dir):
+    image_exts = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+    base = Path(images_dir)
+    if not base.is_dir():
+        raise FileNotFoundError(f"Image directory not found: {images_dir}")
+    files = [str(path) for path in base.iterdir() if path.is_file() and path.suffix.lower() in image_exts]
+    return sorted(files, key=lambda p: natural_sort_key(os.path.basename(p)))
+
+
+def default_image_caption(file_path):
+    filename = os.path.basename(file_path)
+    match = re.search(r"(\d+)", filename)
+    if match:
+        return f"Slide {int(match.group(1))}"
+    return filename
+
+
+def attach_images_dir_to_page(page_id, images_dir):
+    image_files = collect_image_files(images_dir)
+    for file_path in image_files:
+        file_upload_id = upload_local_file(file_path)
+        append_uploaded_file_block(
+            page_id,
+            file_upload_id,
+            file_path,
+            caption=default_image_caption(file_path),
+        )
+        print(f"OK: attached image {file_path} to page {page_id} via file_upload {file_upload_id}")
+    return image_files
+
+
+def build_media_intro(title, file_paths=None, image_files=None):
     created_at = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M")
-    page_title = title or f"附件归档 {created_at}"
+    file_paths = file_paths or []
+    image_files = image_files or []
     intro = (
-        f"{page_title}\n\n"
+        f"{title}\n\n"
         f"创建时间：{created_at}\n"
+        f"幻灯片图片：{len(image_files)}\n"
         f"附件数量：{len(file_paths)}\n"
-        f"说明：以下文件通过 Notion File Upload API 上传并附加。"
+        "说明：页面优先展示可直接阅读的图片，其次保留原始导出文件下载。"
     )
+    return intro
+
+
+def push_attachment_page(file_paths, importance=None, title=None, caption=None, images_dir=None):
+    page_title = title or f"附件归档 {datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M')}"
+    image_files = collect_image_files(images_dir) if images_dir else []
+    intro = build_media_intro(page_title, file_paths=file_paths, image_files=image_files)
     page = push_text(intro, importance=importance)
     page_id = page.get("id")
     if not page_id:
         raise RuntimeError("Failed to create attachment page")
+    if images_dir:
+        attach_images_dir_to_page(page_id, images_dir)
     attach_files_to_page(page_id, file_paths, caption=caption)
     return page
 
@@ -295,6 +343,10 @@ if __name__ == "__main__":
     parser.add_argument("paths", nargs="*", help="Markdown/text files to push as pages.")
     parser.add_argument("--importance", choices=["高", "中", "低"], help="Set 重要性.")
     parser.add_argument("--attach", action="append", default=[], help="Attach local file to the created page. Repeatable.")
+    parser.add_argument(
+        "--attach-images-dir",
+        help="Attach all images in a directory to the page in filename order (png/jpg/jpeg/webp/gif).",
+    )
     parser.add_argument("--title", help="Page title for --attach only mode.")
     parser.add_argument("--caption", help="Attachment caption text (optional).")
     parser.add_argument("--test", action="store_true", help="Verify Notion connectivity.")
@@ -304,7 +356,7 @@ if __name__ == "__main__":
         test_connection()
         sys.exit(0)
 
-    if not cli.paths and not cli.attach:
+    if not cli.paths and not cli.attach and not cli.attach_images_dir:
         print(__doc__.strip())
         sys.exit(0)
 
@@ -312,10 +364,13 @@ if __name__ == "__main__":
         if not os.path.isfile(file_path):
             print(f"ERROR: attachment not found: {file_path}", file=sys.stderr)
             sys.exit(1)
+    if cli.attach_images_dir and not os.path.isdir(cli.attach_images_dir):
+        print(f"ERROR: image directory not found: {cli.attach_images_dir}", file=sys.stderr)
+        sys.exit(1)
 
-    if cli.attach:
+    if cli.attach or cli.attach_images_dir:
         if len(cli.paths) > 1:
-            print("ERROR: with --attach, provide at most one content file.", file=sys.stderr)
+            print("ERROR: with media attachments, provide at most one content file.", file=sys.stderr)
             sys.exit(1)
         if len(cli.paths) == 1:
             content_path = cli.paths[0]
@@ -327,10 +382,13 @@ if __name__ == "__main__":
             if not page_id:
                 print("ERROR: failed to get page id after content push", file=sys.stderr)
                 sys.exit(1)
+            if cli.attach_images_dir:
+                attach_images_dir_to_page(page_id, cli.attach_images_dir)
             attach_files_to_page(page_id, cli.attach, caption=cli.caption)
         else:
             page = push_attachment_page(
                 file_paths=cli.attach,
+                images_dir=cli.attach_images_dir,
                 importance=cli.importance,
                 title=cli.title,
                 caption=cli.caption,

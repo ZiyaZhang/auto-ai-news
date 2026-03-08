@@ -168,8 +168,11 @@ Hard behavior:
 - Do NOT replace NotebookLM slides with local Marp/reveal.js/Keynote generation unless the user explicitly asks for fallback.
 - If `--to-notion` is enabled, push outputs to Notion after export:
   - report mode: push NotebookLM report text from `notebooklm_exports/notebooklm_report.md`.
-  - slides mode: push an archive page and attach exported `pptx/pdf` files.
-  - default publish scope is fixed: `notebooklm_exports/notebooklm_report.md` + `notebooklm_exports/_downloads/*.{pptx,pdf}`.
+  - slides mode: push a 图文归档页:
+    - insert `notebooklm_exports/slides_images/` as sequential image blocks when available
+    - append exported `pptx/pdf` files as downloadable attachments
+    - use `notebooklm_exports/slides_publish.md` as the page intro and metadata source
+  - default publish scope is fixed: `notebooklm_exports/notebooklm_report.md` + `notebooklm_exports/slides_publish.md` + `notebooklm_exports/_downloads/*.{pptx,pdf}`.
   - do not ask user to choose between `report.md/slides.md/摘要` unless user explicitly requests override.
 
 Additional flags:
@@ -475,8 +478,12 @@ Recommended workflow:
    - `timestamp`
 4. If any required download failed:
    - Pause for human; do not retry endlessly.
-5. If `--to-notion` is enabled: transition → PUBLISH_NOTION
-6. Otherwise mark success and transition → DONE
+5. If slide images are available or can be generated locally from exported PDF:
+   - Prefer saving per-slide images under `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_images/`
+   - Filename convention: `slide-01.png`, `slide-02.png`, ...
+   - These images are the preferred Notion reading format.
+6. If `--to-notion` is enabled: transition → PUBLISH_NOTION
+7. Otherwise mark success and transition → DONE
 ```
 
 ### PUBLISH_NOTION
@@ -496,10 +503,12 @@ Recommended workflow:
    - Bridge script MUST NOT fall back to root `intel-hub/out/<task_key>/<run_id>/report.md`.
 3. Enforce new-page rule:
    - report publish MUST create a new Notion page each execution.
-   - slides publish MUST create a new Notion archive page each execution.
-   - recommended default title: `<task_key> <run_id> PPT归档`.
+   - slides publish MUST create a new Notion 图文归档 page each execution.
+   - recommended default title: `<task_key> <run_id> PPT图文归档`.
 4. Enforce fixed default content set:
    - report page source: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/notebooklm_report.md`
+   - slides page intro source: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_publish.md`
+   - slides readable images: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_images/*`
    - slides archive attachments: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/_downloads/*.{pptx,pdf}`
    - do not switch to root `report.md`, `slides.md`, or summary text unless user explicitly asks.
    - root `intel-hub/out/<task_key>/<run_id>/report.md` is intel-hub output, not NotebookLM output, and MUST NOT be used as the default Notion report source.
@@ -575,6 +584,8 @@ Typical workflow:
 
 Notion publishing contract:
 - Report source: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/notebooklm_report.md`
+- Slides page intro: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_publish.md`
+- Slides images: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_images/*`
 - Slides exports: `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/_downloads/*.{pptx,pdf}`
 - Publisher bridge: `skills/notebooklm-importer/publish_to_notion.py`
 - Underlying writer: `skills/notion-writer/notion_push.py`
@@ -725,6 +736,8 @@ ls intel-hub/config/tasks/weekly_ai_intel.yaml
 
 Expected artifacts:
 - `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/notebooklm_report.md`
+- `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_publish.md`
+- `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_images/` when image export exists
 - `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/_downloads/` contains `pptx` or `pdf`
 - Import state has notebook URL and Notion page URLs
 

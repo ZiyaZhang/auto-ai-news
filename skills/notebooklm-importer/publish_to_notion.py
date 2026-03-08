@@ -12,6 +12,7 @@ Usage:
 import argparse
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -41,6 +42,96 @@ def capture_notebooklm_report(target_path):
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(captured.rstrip() + "\n", encoding="utf-8")
     print(f"Captured report text -> {target_path}")
+
+
+def natural_sort_key(value):
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", value)]
+
+
+def collect_image_files(images_dir):
+    exts = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+    if not images_dir.exists():
+        return []
+    return sorted(
+        [p for p in images_dir.iterdir() if p.is_file() and p.suffix.lower() in exts],
+        key=lambda p: natural_sort_key(p.name),
+    )
+
+
+def normalize_slide_image_names(images_dir):
+    image_files = collect_image_files(images_dir)
+    if not image_files:
+        return []
+    width = max(2, len(str(len(image_files))))
+    temp_paths = []
+    for idx, src in enumerate(image_files, start=1):
+        temp = images_dir / f".tmp-slide-{idx:04d}{src.suffix.lower()}"
+        src.rename(temp)
+        temp_paths.append(temp)
+    normalized = []
+    for idx, temp in enumerate(temp_paths, start=1):
+        dst = images_dir / f"slide-{idx:0{width}d}{temp.suffix.lower()}"
+        temp.rename(dst)
+        normalized.append(dst)
+    return normalized
+
+
+def try_convert_pdf_with_pdftoppm(pdf_path, images_dir):
+    tool = shutil.which("pdftoppm")
+    if not tool:
+        return False
+    prefix = images_dir / "slide"
+    proc = subprocess.run(
+        [tool, "-png", "-r", "180", str(pdf_path), str(prefix)],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        print(proc.stderr.strip(), file=sys.stderr)
+        return False
+    return bool(collect_image_files(images_dir))
+
+
+def try_convert_pdf_with_imagemagick(pdf_path, images_dir):
+    for tool_name in ("magick", "convert"):
+        tool = shutil.which(tool_name)
+        if not tool:
+            continue
+        target = images_dir / "slide-%03d.png"
+        proc = subprocess.run(
+            [tool, "-density", "180", str(pdf_path), str(target)],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode == 0 and collect_image_files(images_dir):
+            return True
+        if proc.stderr:
+            print(proc.stderr.strip(), file=sys.stderr)
+    return False
+
+
+def ensure_slides_images(slides_images, attachments):
+    image_files = collect_image_files(slides_images)
+    if image_files:
+        return normalize_slide_image_names(slides_images)
+
+    pdf_files = [p for p in attachments if p.suffix.lower() == ".pdf"]
+    if not pdf_files:
+        return []
+
+    slides_images.mkdir(parents=True, exist_ok=True)
+    source_pdf = pdf_files[0]
+    converted = (
+        try_convert_pdf_with_pdftoppm(source_pdf, slides_images)
+        or try_convert_pdf_with_imagemagick(source_pdf, slides_images)
+    )
+    if not converted:
+        print(
+            "WARN: could not auto-convert PDF to slide images (needs pdftoppm or ImageMagick).",
+            file=sys.stderr,
+        )
+        return []
+    return normalize_slide_image_names(slides_images)
 
 
 def build_slides_publish_md(target_path, title, image_files, attachments):
@@ -134,15 +225,7 @@ def main():
             files.extend(sorted(file_root.glob("*.pdf")))
     if not files:
         raise FileNotFoundError(f"No pptx/pdf found in {downloads} or {exports}")
-    image_files = []
-    if slides_images.exists():
-        image_files = sorted(
-            [
-                path
-                for path in slides_images.iterdir()
-                if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}
-            ]
-        )
+    image_files = ensure_slides_images(slides_images, files)
 
     base = ["python3", str(notion_push)]
 
@@ -172,6 +255,7 @@ def main():
     print(f"report_source={report}")
     print(f"report_url={report_url}")
     print(f"slides_url={slides_url}")
+    print(f"slide_image_count={len(image_files)}")
     print("files=" + ",".join(str(f) for f in files))
 
 

@@ -122,8 +122,9 @@ Expected flow:
 6. Save NotebookLM report text to `notebooklm_exports/notebooklm_report.md`
 7. Generate `notebooklm_exports/slides_publish.md` for the slides page intro
 8. Prefer slide images in `notebooklm_exports/slides_images/` for direct reading in Notion
-9. Export PPTX/PDF to `notebooklm_exports/_downloads/`
-10. Create new Notion pages for the report and slides archive
+9. If `slides_images/` is missing, publisher auto-attempts PDF->images conversion (`pdftoppm` first, `ImageMagick` second)
+10. Export PPTX/PDF to `notebooklm_exports/_downloads/`
+11. Create new Notion pages for the report and slides archive
 
 ## Key output contract
 

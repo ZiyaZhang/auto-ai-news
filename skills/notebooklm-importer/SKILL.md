@@ -26,7 +26,7 @@ Hard rules:
 - For `--to-notion`, use a fixed default publish set without asking follow-up questions:
   - Always publish NotebookLM-generated report text as the report page.
   - Preferred file path: `notebooklm_exports/notebooklm_report.md`.
-  - Always publish NotebookLM exports (`notebooklm_exports/_downloads/*.pptx` and/or `*.pdf`) as the slides archive page.
+  - Always publish a slides 图文归档 page (preferred: `slides_images/*`) and keep `_downloads/*.pptx|*.pdf` as attachments.
   - Do not publish `slides.md` or ad-hoc summary text unless explicitly requested by user.
 - Notion destination MUST come from environment (`NOTION_DATABASE_ID`) only.
   - Ask user for a Notion link/database only when required env vars are missing.
@@ -482,6 +482,8 @@ Recommended workflow:
    - Prefer saving per-slide images under `intel-hub/out/<task_key>/<run_id>/notebooklm_exports/slides_images/`
    - Filename convention: `slide-01.png`, `slide-02.png`, ...
    - These images are the preferred Notion reading format.
+   - Bridge script will auto-attempt PDF -> images conversion (pdftoppm first, ImageMagick second).
+   - If no converter exists, continue with file attachments and emit a warning.
 6. If `--to-notion` is enabled: transition → PUBLISH_NOTION
 7. Otherwise mark success and transition → DONE
 ```

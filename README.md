@@ -18,13 +18,6 @@ The repository is organized for OpenClaw, but the collection engine and Notion p
 - `skills/notebooklm-importer/`: OpenClaw skill contract for NotebookLM import, report generation, slide generation, export, and Notion handoff.
 - `skills/notion-writer/`: Notion publisher with support for markdown pages and local file uploads.
 
-## What is intentionally not in this repo
-
-- No personal `.env` files
-- No OpenClaw local config
-- No NotebookLM login state or Google credentials
-- No `intel-hub/out/`, `intel-hub/state/`, or `intel-hub/import_state/` runtime artifacts
-- No API tokens, database IDs, usernames, or machine-specific paths
 
 ## Architecture
 
